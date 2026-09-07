@@ -17,5 +17,19 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build
-      run: cargo build --verbose
+      run: cargo build 
+    - uses: blackduck-inc/black-duck-security-scan@v2.11.0
+      with:
+        coverity_url: ${{ vars.COVERITY_URL }}
+        coverity_user: ${{ vars.COV_USER }}
+        coverity_password: ${{ secrets.COVERITY_PASSPHRASE }}
+        coverity_passphrase: ${{ secrets.COVERITY_PASSPHRASE }}
+        coverity_policy_view: ${{ github.event_name != 'pull_request' && 'Outstanding Issues' || '' }}
+        coverity_prComment_enabled: false 
+        coverity_build_command: cargo build 
+        coverity_clean_command: cargo clean
+        network_ssl_trustAll: true 
+        coverity_local: true 
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        include_diagnostics: true 
     
