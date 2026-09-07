@@ -1,0 +1,23 @@
+[package]
+name = "perception-embedded-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Security tooling evaluation sample (Rust/embedded) - intentionally vulnerable dependency pins + unsafe code"
+license = "MIT"
+
+# NOTE: versions pinned deliberately low/old to exercise SCA / RUSTSEC
+# advisory-database matching (cargo-audit, cargo-deny, Snyk, Mend, etc).
+[dependencies]
+time = "0.2.22"          # RUSTSEC-2020-0071 (segfault / unsound API)
+smallvec = "1.6.0"       # RUSTSEC-2021-0003 (buffer overflow in insert_many)
+remove_dir_all = "0.5.2" # RUSTSEC-2023-0018 (race condition, symlink attack)
+regex = "1.3.9"          # RUSTSEC-2022-0013 (ReDoS)
+tokio = { version = "1.8.0", features = ["full"] }  # RUSTSEC-2021-0072 (task::Builder unsoundness era)
+openssl = "0.10.29"      # RUSTSEC-2021-0139 (advisory family around bindings)
+hyper = "0.13.9"         # RUSTSEC-2021-0079/0080 era HTTP request smuggling class
+serde_yaml = "0.8.13"    # transitive yaml-rust unmaintained advisory
+rand = "0.7.3"           # older PRNG generation, superseded getrandom advisories
+libc = "0.2.69"
+
+[profile.release]
+panic = "abort"
