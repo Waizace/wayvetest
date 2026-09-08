@@ -13,7 +13,7 @@ jobs:
       COV_USER: ${{ secrets.COV_USER }}
       COVERITY_PASSPHRASE: ${{ secrets.COVERITY_PASSPHRASE }}
       COVERITY_PROJECT: ${{ github.event.repository.name }}
-      COVERITY_TOOLKIT: cov-analysis-linux64-2026.03.0
+      COVERITY_TOOLKIT: cov-analysis-linux64-2026.3.0
       BLDCMD: cargo build 
       CHECKERS: --webapp-security
     steps:
