@@ -21,9 +21,9 @@ jobs:
         export COVERITY_PASSPHRASE=${{ secrets.COVERITY_PASSPHRASE }}
         export  COVERITY_PROJECT=${{ github.event.repository.name }}
         export  COVERITY_TOOLKIT=cov-analysis-linux64-2026.3.0    
-        echo $COVERITY_URL
-        echo $COV_USER
-        echo $COVERITY_PASSPHRASE
+        echo COVERITY_URL
+        echo COV_USER
+        echo COVERITY_PASSPHRASE
         curl -fLsS --user $COV_USER:$COVERITY_PASSPHRASE $COVERITY_URL/downloadFile.htm?fn=$COVERITY_TOOLKIT.tar.gz | tar -C ${{ runner.temp }} -xzf -
         curl -fLsS --user $COV_USER:$COVERITY_PASSPHRASE -o ${{ runner.temp }}/$COVERITY_TOOLKIT/bin/license.dat $COVERITY_URL/downloadFile.htm?fn=license.dat
     - name: Coverity Full Scan
