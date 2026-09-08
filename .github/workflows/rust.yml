@@ -1,9 +1,9 @@
 name: Coverity Rust
 on:
   push:
-    branches: [ main, master, develop, stage, release ]
+    branches: [ main, master, develop, stage, release, jwaizguy-patch-1 ]
   pull_request:
-    branches: [ main, master, develop, stage, release ]
+    branches: [ main, master, develop, stage, release, jwaizguy-patch-1 ]
   workflow_dispatch:
 jobs:
   coverity:
@@ -29,8 +29,7 @@ jobs:
         COVERITY_STREAM: ${{ github.event.repository.name }}-${{ github.ref_name }}
       run: |
         export PATH=$PATH:${{ runner.temp }}/$COVERITY_TOOLKIT/bin
-        cov-configure --java
-        cov-configure --javascript
+        cov-configure --rust
         cov-build --dir idir --fs-capture-search $GITHUB_WORKSPACE $BLDCMD
         cov-analyze --dir idir --ticker-mode none --strip-path $GITHUB_WORKSPACE $CHECKERS
         cov-commit-defects --dir idir --ticker-mode none --url $COVERITY_URL --stream $COVERITY_STREAM --scm git \
