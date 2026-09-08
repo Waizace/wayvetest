@@ -20,8 +20,8 @@ jobs:
       - name: Coverity Scan 
         uses: blackduck-inc/black-duck-security-scan@v2.11.0
         with:
-         coverity_url: ${{ vars.COVERITY_URL }}
-         coverity_user: ${{ vars.COV_USER }}
+         coverity_url: ${{ secrets.COVERITY_URL }}
+         coverity_user: ${{ secrets.COV_USER }}
          coverity_password: ${{ secrets.COVERITY_PASSPHRASE }}
          coverity_passphrase: ${{ secrets.COVERITY_PASSPHRASE }}
          coverity_policy_view: ${{ github.event_name != 'pull_request' && 'Outstanding Issues' || '' }}
