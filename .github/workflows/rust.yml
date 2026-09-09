@@ -18,7 +18,7 @@ jobs:
       run: |
         export  COVERITY_URL=${{ secrets.COVERITY_URL }}
         export COV_USER=${{ secrets.COV_USER }}
-        export COVERITY_PASSPHRASE=${{ secrets.COVERITY_PASSPHRASE }}
+        export COVERITY_PASSWORD=${{ secrets.COVERITY_PASSPHRASE }}
         export  COVERITY_PROJECT=${{ github.event.repository.name }}
         export  COVERITY_TOOLKIT=cov-analysis-linux64-2026.3.0    
         echo "Testing Coverity connection..."
