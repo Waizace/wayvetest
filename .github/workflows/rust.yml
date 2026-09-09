@@ -1,21 +1,65 @@
-name: Rust
-
+name: Coverity Rust
 on:
   push:
-    branches: [ "main","branch1" ]
+    branches: [ main, master, develop, stage, release, jwaizguy-patch-1 ]
   pull_request:
-    branches: [ "main","branch1" ]
-
-env:
-  CARGO_TERM_COLOR: always
-
+    branches: [ main, master, develop, stage, release, jwaizguy-patch-1 ]
+  workflow_dispatch:
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  coverity:
+    runs-on: ubuntu-latest  
+    env:
+     BLDCMD: cargo build 
+     CHECKERS: default
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    
+    - name: Checkout Source
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Coverity Download
+      run: |
+        export  COVERITY_URL=${{ secrets.COVERITY_URL }}
+        export COV_USER=${{ secrets.COV_USER }}
+        export COVERITY_PASSWORD=${{ secrets.COVERITY_PASSPHRASE }}
+        export  COVERITY_PROJECT=${{ github.event.repository.name }}
+        export  COVERITY_TOOLKIT=cov-analysis-linux64-2026.3.0    
+        echo "Testing Coverity connection..."
+        echo "$COVERITY_TOOLKIT.TAR.GZ"
+        curl -v --user $COV_USER:$COVERITY_PASSPHRASE "$COVERITY_URL/downloadFile.htm?fn=$COVERITY_TOOLKIT.tar.gz" -o /tmp/test.tar.gz 2>&1 | head -20
+        echo "Download size: $(ls -lh /tmp/test.tar.gz 2>/dev/null || echo 'Failed')"
+        
+        curl -fLsS --user $COV_USER:$COVERITY_PASSPHRASE $COVERITY_URL/downloadFile.htm?fn=$COVERITY_TOOLKIT.tar.gz | tar -C ${{ runner.temp }} -xzf -
+        curl -fLsS --user $COV_USER:$COVERITY_PASSPHRASE -o ${{ runner.temp }}/$COVERITY_TOOLKIT/bin/license.dat $COVERITY_URL/downloadFile.htm?fn=license.dat
+    - name: Coverity Full Scan
+      if: ${{ github.event_name != 'pull_request' }}
+      env:
+        COVERITY_STREAM: ${{ github.event.repository.name }}-${{ github.ref_name }}
+      run: |
+        export PATH=$PATH:${{ runner.temp }}/$COVERITY_TOOLKIT/bin
+        cov-configure --rust
+        cov-build --dir idir --fs-capture-search $GITHUB_WORKSPACE $BLDCMD
+        cov-analyze --dir idir --ticker-mode none --strip-path $GITHUB_WORKSPACE $CHECKERS
+        cov-commit-defects --dir idir --ticker-mode none --url $COVERITY_URL --stream $COVERITY_STREAM --scm git \
+          --description $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID --target $RUNNER_OS --version $GITHUB_SHA
+    - name: Coverity Quality Gate
+      if: ${{ github.event_name != 'pull_request' }}
+      run: |
+        curl -fLsS --user $COV_USER:$COVERITY_PASSPHRASE $COVERITY_URL/api/viewContents/issues/v1/Outstanding%20Issues?projectId=$COVERITY_PROJECT > issues.json
+        if [ $(cat issues.json | jq .viewContentsV1.totalRows) -ne 0 ]; then echo "Outstanding Issues Detected"; cat issues.json | jq .viewContentsV1.rows; exit 8; fi
+    - name: Get PR Changeset
+      id: changeset
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: jitterbit/get-changed-files@b17fbb00bdc0c0f63fcf166580804b4d2cdc2a42 # v1.0.0
+    - name: Coverity PR Scan
+      if: ${{ github.event_name == 'pull_request' && steps.changeset.outputs.added_modified != '' }}
+      env:
+        COVERITY_STREAM: ${{ github.event.repository.name }}-${{ github.base_ref }}
+      run: |
+        export PATH=$PATH:${{ runner.temp }}/$COVERITY_TOOLKIT/bin
+        cov-run-desktop --dir idir --url $COVERITY_URL --stream $COVERITY_STREAM --build $BLDCMD
+        cov-run-desktop --dir idir --url $COVERITY_URL --stream $COVERITY_STREAM --present-in-reference false \
+          --ignore-uncapturable-inputs true --json-output-v10 issues.json --exit1-if-defects true ${{ steps.changeset.outputs.added_modified }}
+#    - name: Save Logs
+#      if: always()
+#      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+#      with:
+#        name: coverity-logs
+#        path: ${{ github.workspace }}/idir
